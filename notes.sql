@@ -84,3 +84,5 @@ CREATE TABLE comments(
 	  REFERENCES users(id)
 	  ON DELETE CASCADE
 );
+
+pg_dump diorama > db/diorama.sql -U diorama -h localhost

@@ -16,7 +16,7 @@ import (
 func goDotEnvVariable(key string) string {
 
 	// load .env file
-	err := godotenv.Load(".env")
+	err := godotenv.Load("./.env")
 
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -26,11 +26,11 @@ func goDotEnvVariable(key string) string {
 }
 
 var (
-	host     = goDotEnvVariable("HOST")
+	host     = goDotEnvVariable("PQ_HOST")
 	port     = 5432
-	user     = goDotEnvVariable("USER")
-	password = goDotEnvVariable("PASSWORD")
-	dbname   = goDotEnvVariable("DBNAME")
+	user     = goDotEnvVariable("PQ_USER")
+	password = goDotEnvVariable("PQ_PASSWORD")
+	dbname   = goDotEnvVariable("PQ_DBNAME")
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-
+	// log.Println(psqlconn)
 	// open database
 	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
@@ -59,6 +59,7 @@ func main() {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("Hello")
+
 		return c.SendString("Hello, World 👋!")
 	})
 
