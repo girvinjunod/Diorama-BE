@@ -4,6 +4,8 @@ go 1.17
 
 require github.com/gofiber/fiber/v2 v2.26.0
 
+require github.com/joho/godotenv v1.4.0
+
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
