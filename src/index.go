@@ -36,7 +36,7 @@ func main() {
 	log.Println("Starting server on " + host)
 	app := fiber.New()
 
-	app.Static("/", "./public")
+	app.Static("/public", "../public")
 
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
