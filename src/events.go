@@ -101,17 +101,3 @@ func getTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
 
 	return response
 }
-
-// data, err := os.ReadFile("public/profile-picture/elephant-seal.jpg")
-// if err != nil {
-// 	log.Fatal(err)
-// }
-
-// insertDynStmt := `insert into events (trip_id, user_id, caption, event_date, post_time, picture) values($1,$2,$3,$4,$5,$6)`
-// _, err = db.Exec(insertDynStmt, 1, 1, "Melihat gajah laut", time.Now(), time.Now(), data)
-
-// if err != nil {
-// 	log.Fatal(err)
-// }
-
-// return c.SendString("hi")
