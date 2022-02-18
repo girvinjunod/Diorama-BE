@@ -61,11 +61,13 @@ type timelineResponse struct {
 	UserFeedID int    `json:"userID"`
 	Username   string `json:"username"`
 	EventID    int    `json:"eventID"`
+	Caption    string `json:"caption"`
+	TripName   string `json:"tripname"`
 }
 
 func getTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
 	log.Println("Get Timeline")
-	query := `SELECT u.username as Username, f.followed_id as UserFeedID, e.id as EventID FROM users u, following f, events e where f.follower_id = $1 and u.id=f.followed_id and f.followed_id=e.user_id limit $2`
+	query := `SELECT u.username as Username, f.followed_id as UserFeedID, e.id as EventID, e.caption as Caption, t.trip_name FROM users u, following f, events e, trips t where f.follower_id = $1 and u.id=f.followed_id and f.followed_id=e.user_id and e.trip_id = t.id limit $2`
 	rows, err := db.Query(query, userID, limit)
 	var response []*timelineResponse
 	if err != nil {
@@ -79,7 +81,9 @@ func getTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
 		var username string
 		var userfeedid int
 		var eventid int
-		if err := rows.Scan(&username, &userfeedid, &eventid); err != nil {
+		var caption string
+		var trip_name string
+		if err := rows.Scan(&username, &userfeedid, &eventid, &caption, &trip_name); err != nil {
 			log.Println(err)
 			return response
 		}
@@ -88,6 +92,8 @@ func getTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
 			UserFeedID: userfeedid,
 			Username:   username,
 			EventID:    eventid,
+			Caption:    caption,
+			TripName:   trip_name,
 		}
 		response = append(response, res)
 
