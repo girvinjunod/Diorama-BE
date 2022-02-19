@@ -76,6 +76,22 @@ func getEventDetailByID(db *sql.DB, id string) *eventResponse {
 	return res
 }
 
+func setEventDetail(db *sql.DB, eventID int, caption string, event_date string) string {
+	log.Printf("update event with ID= %d", eventID)
+	insertDynStmt := `UPDATE events SET
+    caption = $1,
+    event_date = $2
+	WHERE id = $3`
+	_, err := db.Exec(insertDynStmt, caption, event_date, eventID)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error()
+	}
+
+	return "true"
+}
+
 func setEventPicture(db *sql.DB, picture []byte, eventID string) string {
 	log.Println("Add picture to event ID=" + eventID)
 	insertDynStmt := `update events set picture=$1 where id=$2`

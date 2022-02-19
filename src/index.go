@@ -172,6 +172,28 @@ func main() {
 	},
 	)
 
+	app.Post("/setTripDetail", func(c *fiber.Ctx) error {
+		type Trip struct {
+			TripId       int    `json:"TripID"`
+			StartDate    string `json:"StartDate"`
+			EndDate      string `json:"EndDate"`
+			TripName     string `json:"TripName"`
+			LocationName string `json:"LocationName"`
+		}
+		p := new(Trip)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		res := setTripDetail(db, p.TripId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
+		if res == "true" {
+			return successMsg(c, "Successfully updated trip details")
+		} else {
+			return errorMsg(c, res)
+		}
+
+	})
+
 	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
@@ -219,6 +241,26 @@ func main() {
 		}
 	},
 	)
+
+	app.Post("/setEventDetail", func(c *fiber.Ctx) error {
+		type Event struct {
+			EventId   int    `json:"EventID"`
+			Caption   string `json:"Caption"`
+			EventDate string `json:"EventDate"`
+		}
+		p := new(Event)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		res := setEventDetail(db, p.EventId, p.Caption, p.EventDate)
+		if res == "true" {
+			return successMsg(c, "Successfully updated event details")
+		} else {
+			return errorMsg(c, res)
+		}
+
+	})
 
 	app.Post("/setEventPicture", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")

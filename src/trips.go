@@ -75,3 +75,21 @@ func getTripDetailById(db *sql.DB, id string) *tripResponse {
 	}
 	return res
 }
+
+func setTripDetail(db *sql.DB, tripID int, start_date string, end_date string, trip_name string, location_name string) string {
+	log.Printf("update trip with ID= %d", tripID)
+	insertDynStmt := `UPDATE trips SET
+    start_date = $1,
+    end_date = $2,
+	trip_name = $3,
+	location_name = $4
+	WHERE id = $5`
+	_, err := db.Exec(insertDynStmt, start_date, end_date, trip_name, location_name, tripID)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error()
+	}
+
+	return "true"
+}
