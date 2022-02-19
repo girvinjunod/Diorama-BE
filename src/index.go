@@ -97,6 +97,53 @@ func main() {
 	},
 	)
 
+	app.Post("/setUserDetail", func(c *fiber.Ctx) error {
+		type User struct {
+			UserId   int    `json:"userID"`
+			Username string `json:"Username"`
+			Name     string `json:"Name"`
+			Email    string `json:"Email"`
+		}
+		p := new(User)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		if p.UserId == 0 {
+			return errorMsg(c, "Invalid user ID")
+		}
+
+		res := setUserDetail(db, p.UserId, p.Username, p.Name, p.Email)
+		if res == "true" {
+			return successMsg(c, "Successfully updated user details")
+		} else {
+			return errorMsg(c, res)
+		}
+	})
+
+	app.Post("/setUserPassword", func(c *fiber.Ctx) error {
+		type User struct {
+			UserId      int    `json:"userID"`
+			OldPassword string `json:"OldPassword"`
+			NewPassword string `json:"NewPassword"`
+		}
+		p := new(User)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		if p.UserId == 0 {
+			return errorMsg(c, "Invalid user ID")
+		}
+
+		res := setUserPassword(db, p.UserId, p.OldPassword, p.NewPassword)
+		if res == "true" {
+			return successMsg(c, "Successfully updated user password")
+		} else {
+			return errorMsg(c, res)
+		}
+	})
+
 	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		response := getPPByID(db, id)
@@ -148,6 +195,10 @@ func main() {
 		if err := c.BodyParser(p); err != nil {
 			return errorMsg(c, err.Error())
 		}
+		if p.UserId == 0 {
+			return errorMsg(c, "Invalid user ID")
+		}
+
 		res, id := addTrip(db, p.UserId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
 		if res == "true" {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -183,6 +234,10 @@ func main() {
 		p := new(Trip)
 		if err := c.BodyParser(p); err != nil {
 			return errorMsg(c, err.Error())
+		}
+
+		if p.TripId == 0 {
+			return errorMsg(c, "Invalid user ID")
 		}
 
 		res := setTripDetail(db, p.TripId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
@@ -251,6 +306,10 @@ func main() {
 		p := new(Event)
 		if err := c.BodyParser(p); err != nil {
 			return errorMsg(c, err.Error())
+		}
+
+		if p.EventId == 0 {
+			return errorMsg(c, "Invalid event ID")
 		}
 
 		res := setEventDetail(db, p.EventId, p.Caption, p.EventDate)
