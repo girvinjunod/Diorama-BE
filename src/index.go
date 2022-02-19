@@ -61,18 +61,7 @@ func main() {
 		return successMsg(c, "Hello World!")
 	})
 
-	app.Get("/getUserByID/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := getUserByID(db, id)
-
-		if response != nil {
-			return c.Status(fiber.StatusOK).JSON(response)
-
-		} else {
-			return errorMsg(c, "User not found")
-		}
-	},
-	)
+	// Auth API
 
 	app.Post("/register", func(c *fiber.Ctx) error {
 		type User struct {
@@ -83,7 +72,7 @@ func main() {
 		}
 		p := new(User)
 		if err := c.BodyParser(p); err != nil {
-			return err
+			return errorMsg(c, err.Error())
 		}
 		res := register(db, p.Username, p.Email, p.Name, p.Password)
 		if res == "true" {
@@ -92,6 +81,21 @@ func main() {
 			return errorMsg(c, res)
 		}
 	})
+
+	// User API
+
+	app.Get("/getUserByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := getUserById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return errorMsg(c, "User not found")
+		}
+	},
+	)
 
 	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
@@ -130,6 +134,8 @@ func main() {
 		}
 	})
 
+	// Trips API
+
 	app.Post("/addTrip", func(c *fiber.Ctx) error {
 		type Trip struct {
 			UserId       int    `json:"UserID"`
@@ -140,15 +146,33 @@ func main() {
 		}
 		p := new(Trip)
 		if err := c.BodyParser(p); err != nil {
-			return err
+			return errorMsg(c, err.Error())
 		}
-		res := addTrip(db, p.UserId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
+		res, id := addTrip(db, p.UserId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
 		if res == "true" {
-			return successMsg(c, "Successfully added picture")
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"TripID": id,
+				"error":  false,
+			})
 		} else {
 			return errorMsg(c, res)
 		}
 	})
+
+	app.Get("/getTripDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := getTripDetailById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return errorMsg(c, "Trip not found")
+		}
+	},
+	)
+
+	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")
@@ -172,13 +196,29 @@ func main() {
 		EventDate := c.FormValue("eventDate")
 		PostTime := c.FormValue("postTime")
 
-		res := addEvent(db, TripId, UserId, Caption, EventDate, PostTime, data)
+		res, id := addEvent(db, TripId, UserId, Caption, EventDate, PostTime, data)
 		if res == "true" {
-			return successMsg(c, "Successfully added picture")
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"EventID": id,
+				"error":   false,
+			})
 		} else {
 			return errorMsg(c, res)
 		}
 	})
+
+	app.Get("/getEventDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := getEventDetailByID(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return errorMsg(c, "Event not found")
+		}
+	},
+	)
 
 	app.Post("/setEventPicture", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")

@@ -12,7 +12,7 @@ type userResponse struct {
 	Email    string `json:"email"`
 }
 
-func getUserByID(db *sql.DB, id string) *userResponse {
+func getUserById(db *sql.DB, id string) *userResponse {
 	query := `SELECT id, username, email FROM users where id=$1`
 	rows, err := db.Query(query, id)
 	var res *userResponse

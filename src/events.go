@@ -6,19 +6,74 @@ import (
 	"time"
 )
 
-func addEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, post_time string, picture []byte) string {
+func addEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, post_time string, picture []byte) (string, int) {
 	log.Println("Add new event")
-	event, _ := time.Parse("2006-01-02", event_date)
-	postTime, _ := time.Parse("2006-01-02 15:04:05", post_time)
-	insertDynStmt := `insert into events (trip_id, user_id, caption, event_date, post_time, picture) values($1,$2,$3,$4,$5,$6)`
-	_, err := db.Exec(insertDynStmt, trip_id, user_id, caption, event, postTime, picture)
+	event, err := time.Parse("2006-01-02", event_date)
+	if err != nil {
+		log.Println(err)
+		return err.Error(), 0
+	}
+	postTime, err := time.Parse("2006-01-02 15:04:05", post_time)
+	if err != nil {
+		log.Println(err)
+		return err.Error(), 0
+	}
+	insertDynStmt := `insert into events (trip_id, user_id, caption, event_date, post_time, picture) values($1,$2,$3,$4,$5,$6) RETURNING id`
+	var id int
+	err = db.QueryRow(insertDynStmt, trip_id, user_id, caption, event, postTime, picture).Scan(&id)
 
 	if err != nil {
 		log.Println(err)
-		return err.Error()
+		return err.Error(), 0
 	}
 
-	return "true"
+	log.Printf("Inserted events on id = %d", id)
+	return "true", id
+}
+
+type eventResponse struct {
+	Error     string `json:"error"`
+	Id        int    `json:"id"`
+	TripID    int    `json:"tripId"`
+	UserID    int    `json:"userId"`
+	Caption   string `json:"caption"`
+	EventDate string `json:"eventDate"`
+	PostTime  string `json:"postTime"`
+}
+
+func getEventDetailByID(db *sql.DB, id string) *eventResponse {
+	query := `SELECT id, trip_id, user_id, caption, event_date, post_time FROM events where id=$1`
+	rows, err := db.Query(query, id)
+	var res *eventResponse
+	if err != nil {
+		return res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var tripid int
+		var userid int
+		var caption string
+		var eventDate time.Time
+		var postTime time.Time
+		if err := rows.Scan(&id, &tripid, &userid, &caption, &eventDate, &postTime); err != nil {
+			log.Println(err)
+			return res
+		}
+
+		res = &eventResponse{
+			Error:     "false",
+			Id:        id,
+			TripID:    tripid,
+			UserID:    userid,
+			Caption:   caption,
+			EventDate: eventDate.Format("2006-01-02"),
+			PostTime:  postTime.Format("2006-01-02 15:04:05"),
+		}
+
+	}
+	return res
 }
 
 func setEventPicture(db *sql.DB, picture []byte, eventID string) string {
