@@ -76,8 +76,30 @@ func getTripDetailById(db *sql.DB, id string) *tripResponse {
 	return res
 }
 
-func setTripDetail(db *sql.DB, tripID int, start_date string, end_date string, trip_name string, location_name string) string {
-	log.Printf("update trip with ID= %d", tripID)
+func getAllEventsFromTrip(db *sql.DB, id string) (string, []int) {
+	query := `SELECT e.id as eventID FROM trips t, events e where t.id=$1 and t.id=e.trip_id`
+	rows, err := db.Query(query, id)
+	var res []int
+	if err != nil {
+		return err.Error(), res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var eventid int
+		if err := rows.Scan(&eventid); err != nil {
+			log.Println(err)
+			return err.Error(), res
+		}
+
+		res = append(res, eventid)
+
+	}
+	return id, res
+}
+
+func setTripDetail(db *sql.DB, tripID string, start_date string, end_date string, trip_name string, location_name string) string {
+	log.Printf("update trip with ID= " + tripID)
 	insertDynStmt := `UPDATE trips SET
     start_date = $1,
     end_date = $2,
@@ -85,6 +107,19 @@ func setTripDetail(db *sql.DB, tripID int, start_date string, end_date string, t
 	location_name = $4
 	WHERE id = $5`
 	_, err := db.Exec(insertDynStmt, start_date, end_date, trip_name, location_name, tripID)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error()
+	}
+
+	return "true"
+}
+
+func deleteTrip(db *sql.DB, tripID string) string {
+	log.Printf("delete trip with ID= " + tripID)
+	query := `delete from trips where id=$1`
+	_, err := db.Exec(query, tripID)
 
 	if err != nil {
 		log.Println(err)

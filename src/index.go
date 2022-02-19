@@ -97,9 +97,9 @@ func main() {
 	},
 	)
 
-	app.Post("/setUserDetail", func(c *fiber.Ctx) error {
+	app.Put("/setUserDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
 		type User struct {
-			UserId   int    `json:"userID"`
 			Username string `json:"Username"`
 			Name     string `json:"Name"`
 			Email    string `json:"Email"`
@@ -109,11 +109,7 @@ func main() {
 			return errorMsg(c, err.Error())
 		}
 
-		if p.UserId == 0 {
-			return errorMsg(c, "Invalid user ID")
-		}
-
-		res := setUserDetail(db, p.UserId, p.Username, p.Name, p.Email)
+		res := setUserDetail(db, id, p.Username, p.Name, p.Email)
 		if res == "true" {
 			return successMsg(c, "Successfully updated user details")
 		} else {
@@ -154,7 +150,7 @@ func main() {
 	},
 	)
 
-	app.Post("/setUserPP", func(c *fiber.Ctx) error {
+	app.Put("/setUserPP/:id", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")
 		if err != nil {
 			return errorMsg(c, err.Error())
@@ -170,14 +166,25 @@ func main() {
 			errorMsg(c, err.Error())
 		}
 
-		userID := c.FormValue("userID")
+		userID := c.Params("id")
 
 		res := setUserPP(db, data, userID)
 
 		if res == "true" {
-			return successMsg(c, "Successfully added profile picture")
+			return successMsg(c, "Successfully changed profile picture")
 		} else {
 			return errorMsg(c, res)
+		}
+	})
+
+	app.Delete("/deleteUser/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := deleteUser(db, id)
+
+		if response == "true" {
+			return successMsg(c, "User successfully deleted")
+		} else {
+			return errorMsg(c, response)
 		}
 	})
 
@@ -223,9 +230,24 @@ func main() {
 	},
 	)
 
-	app.Post("/setTripDetail", func(c *fiber.Ctx) error {
+	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		tripId, events := getAllEventsFromTrip(db, id)
+
+		if events != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":    false,
+				"tripID":   tripId,
+				"eventIDs": events,
+			})
+		} else {
+			return errorMsg(c, "Trip not found")
+		}
+	})
+
+	app.Put("/setTripDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
 		type Trip struct {
-			TripId       int    `json:"TripID"`
 			StartDate    string `json:"StartDate"`
 			EndDate      string `json:"EndDate"`
 			TripName     string `json:"TripName"`
@@ -236,17 +258,24 @@ func main() {
 			return errorMsg(c, err.Error())
 		}
 
-		if p.TripId == 0 {
-			return errorMsg(c, "Invalid user ID")
-		}
-
-		res := setTripDetail(db, p.TripId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
+		res := setTripDetail(db, id, p.StartDate, p.EndDate, p.TripName, p.LocationName)
 		if res == "true" {
 			return successMsg(c, "Successfully updated trip details")
 		} else {
 			return errorMsg(c, res)
 		}
 
+	})
+
+	app.Delete("/deleteTrip/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := deleteTrip(db, id)
+
+		if response == "true" {
+			return successMsg(c, "Trip successfully deleted")
+		} else {
+			return errorMsg(c, response)
+		}
 	})
 
 	// Event API
@@ -297,9 +326,9 @@ func main() {
 	},
 	)
 
-	app.Post("/setEventDetail", func(c *fiber.Ctx) error {
+	app.Put("/setEventDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
 		type Event struct {
-			EventId   int    `json:"EventID"`
 			Caption   string `json:"Caption"`
 			EventDate string `json:"EventDate"`
 		}
@@ -308,11 +337,7 @@ func main() {
 			return errorMsg(c, err.Error())
 		}
 
-		if p.EventId == 0 {
-			return errorMsg(c, "Invalid event ID")
-		}
-
-		res := setEventDetail(db, p.EventId, p.Caption, p.EventDate)
+		res := setEventDetail(db, id, p.Caption, p.EventDate)
 		if res == "true" {
 			return successMsg(c, "Successfully updated event details")
 		} else {
@@ -321,7 +346,7 @@ func main() {
 
 	})
 
-	app.Post("/setEventPicture", func(c *fiber.Ctx) error {
+	app.Put("/setEventPicture/:id", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")
 		if err != nil {
 			return errorMsg(c, err.Error())
@@ -337,12 +362,12 @@ func main() {
 			errorMsg(c, err.Error())
 		}
 
-		eventID := c.FormValue("eventID")
+		eventID := c.Params("id")
 
 		res := setEventPicture(db, data, eventID)
 
 		if res == "true" {
-			return successMsg(c, "Successfully added picture")
+			return successMsg(c, "Successfully changed picture")
 		} else {
 			return errorMsg(c, res)
 		}
@@ -372,6 +397,17 @@ func main() {
 			})
 		}
 
+	})
+
+	app.Delete("/deleteEvent/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := deleteEvent(db, id)
+
+		if response == "true" {
+			return successMsg(c, "Event successfully deleted")
+		} else {
+			return errorMsg(c, response)
+		}
 	})
 
 	app.Listen(":3000")

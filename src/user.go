@@ -46,8 +46,8 @@ func getUserById(db *sql.DB, id string) *userResponse {
 	return res
 }
 
-func setUserDetail(db *sql.DB, userID int, username string, name string, email string) string {
-	log.Printf("update user with ID= %d", userID)
+func setUserDetail(db *sql.DB, userID string, username string, name string, email string) string {
+	log.Printf("update user with ID= " + userID)
 	insertDynStmt := `UPDATE users SET
     username = $1,
     name = $2,
@@ -123,9 +123,22 @@ func getPPByID(db *sql.DB, id string) []byte {
 }
 
 func setUserPP(db *sql.DB, picture []byte, id string) string {
-	log.Println("Add picture to user ID=" + id)
+	log.Println("Update picture at user ID=" + id)
 	insertDynStmt := `update users set profile_picture=$1 where id=$2`
 	_, err := db.Exec(insertDynStmt, picture, id)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error()
+	}
+
+	return "true"
+}
+
+func deleteUser(db *sql.DB, userID string) string {
+	log.Printf("delete user with ID= " + userID)
+	query := `delete from users where id=$1`
+	_, err := db.Exec(query, userID)
 
 	if err != nil {
 		log.Println(err)

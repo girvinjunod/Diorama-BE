@@ -76,8 +76,8 @@ func getEventDetailByID(db *sql.DB, id string) *eventResponse {
 	return res
 }
 
-func setEventDetail(db *sql.DB, eventID int, caption string, event_date string) string {
-	log.Printf("update event with ID= %d", eventID)
+func setEventDetail(db *sql.DB, eventID string, caption string, event_date string) string {
+	log.Printf("update event with ID= " + eventID)
 	insertDynStmt := `UPDATE events SET
     caption = $1,
     event_date = $2
@@ -93,7 +93,7 @@ func setEventDetail(db *sql.DB, eventID int, caption string, event_date string) 
 }
 
 func setEventPicture(db *sql.DB, picture []byte, eventID string) string {
-	log.Println("Add picture to event ID=" + eventID)
+	log.Println("Change picture at event ID=" + eventID)
 	insertDynStmt := `update events set picture=$1 where id=$2`
 	_, err := db.Exec(insertDynStmt, picture, eventID)
 
@@ -126,6 +126,19 @@ func getEventPictureByID(db *sql.DB, id string) []byte {
 		response = picture
 	}
 	return response
+}
+
+func deleteEvent(db *sql.DB, eventID string) string {
+	log.Printf("delete event with ID= " + eventID)
+	query := `delete from events where id=$1`
+	_, err := db.Exec(query, eventID)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error()
+	}
+
+	return "true"
 }
 
 type timelineResponse struct {
