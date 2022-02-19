@@ -6,21 +6,17 @@ import (
 	"time"
 )
 
-func addEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, post_time string, picture []byte) (string, int) {
+func addEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, picture []byte) (string, int) {
 	log.Println("Add new event")
 	event, err := time.Parse("2006-01-02", event_date)
 	if err != nil {
 		log.Println(err)
 		return err.Error(), 0
 	}
-	postTime, err := time.Parse("2006-01-02 15:04:05", post_time)
-	if err != nil {
-		log.Println(err)
-		return err.Error(), 0
-	}
+
 	insertDynStmt := `insert into events (trip_id, user_id, caption, event_date, post_time, picture) values($1,$2,$3,$4,$5,$6) RETURNING id`
 	var id int
-	err = db.QueryRow(insertDynStmt, trip_id, user_id, caption, event, postTime, picture).Scan(&id)
+	err = db.QueryRow(insertDynStmt, trip_id, user_id, caption, event, time.Now(), picture).Scan(&id)
 
 	if err != nil {
 		log.Println(err)

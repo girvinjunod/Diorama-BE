@@ -128,10 +128,6 @@ func main() {
 			return errorMsg(c, err.Error())
 		}
 
-		if p.UserId == 0 {
-			return errorMsg(c, "Invalid user ID")
-		}
-
 		res := setUserPassword(db, p.UserId, p.OldPassword, p.NewPassword)
 		if res == "true" {
 			return successMsg(c, "Successfully updated user password")
@@ -202,9 +198,6 @@ func main() {
 		if err := c.BodyParser(p); err != nil {
 			return errorMsg(c, err.Error())
 		}
-		if p.UserId == 0 {
-			return errorMsg(c, "Invalid user ID")
-		}
 
 		res, id := addTrip(db, p.UserId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
 		if res == "true" {
@@ -229,21 +222,6 @@ func main() {
 		}
 	},
 	)
-
-	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		tripId, events := getAllEventsFromTrip(db, id)
-
-		if events != nil {
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"error":    false,
-				"tripID":   tripId,
-				"eventIDs": events,
-			})
-		} else {
-			return errorMsg(c, "Trip not found")
-		}
-	})
 
 	app.Put("/setTripDetail/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
@@ -300,9 +278,8 @@ func main() {
 		UserId := c.FormValue("userID")
 		Caption := c.FormValue("caption")
 		EventDate := c.FormValue("eventDate")
-		PostTime := c.FormValue("postTime")
 
-		res, id := addEvent(db, TripId, UserId, Caption, EventDate, PostTime, data)
+		res, id := addEvent(db, TripId, UserId, Caption, EventDate, data)
 		if res == "true" {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{
 				"EventID": id,
@@ -384,6 +361,21 @@ func main() {
 	},
 	)
 
+	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		tripId, events := getAllEventsFromTrip(db, id)
+
+		if events != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":    false,
+				"tripID":   tripId,
+				"eventIDs": events,
+			})
+		} else {
+			return errorMsg(c, "Trip not found")
+		}
+	})
+
 	app.Get("/getTimeline/:id", func(c *fiber.Ctx) error {
 		userID := c.Params("id")
 		response := getTimeline(db, userID, 10)
@@ -407,6 +399,88 @@ func main() {
 			return successMsg(c, "Event successfully deleted")
 		} else {
 			return errorMsg(c, response)
+		}
+	})
+
+	// Comment API
+
+	app.Post("/addComment", func(c *fiber.Ctx) error {
+		type Comment struct {
+			EventId int    `json:"EventID"`
+			UserId  int    `json:"UserID"`
+			Text    string `json:"Text"`
+		}
+		p := new(Comment)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		res, id := addComment(db, p.EventId, p.UserId, p.Text)
+		if res == "true" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"CommentID": id,
+				"error":     false,
+			})
+		} else {
+			return errorMsg(c, res)
+		}
+	})
+
+	app.Get("/getCommentDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := getCommentDetailById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return errorMsg(c, "Comment not found")
+		}
+	},
+	)
+
+	app.Put("/setCommentDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		type Comment struct {
+			Text string `json:"Text"`
+		}
+		p := new(Comment)
+		if err := c.BodyParser(p); err != nil {
+			return errorMsg(c, err.Error())
+		}
+
+		res := setCommentDetail(db, id, p.Text)
+		if res == "true" {
+			return successMsg(c, "Successfully updated comment details")
+		} else {
+			return errorMsg(c, res)
+		}
+
+	})
+
+	app.Delete("/deleteComment/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := deleteComment(db, id)
+
+		if response == "true" {
+			return successMsg(c, "Comment successfully deleted")
+		} else {
+			return errorMsg(c, response)
+		}
+	})
+
+	app.Get("/getCommentsFromEvent/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		eventId, comments := getAllCommentsFromEvent(db, id)
+
+		if comments != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":        false,
+				"eventID":      eventId,
+				"commentTexts": comments,
+			})
+		} else {
+			return errorMsg(c, "Comment not found")
 		}
 	})
 
