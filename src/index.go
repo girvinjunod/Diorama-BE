@@ -372,7 +372,7 @@ func main() {
 				"eventIDs": events,
 			})
 		} else {
-			return errorMsg(c, "Trip not found")
+			return errorMsg(c, "Trip or Events not found")
 		}
 	})
 
@@ -480,7 +480,7 @@ func main() {
 				"commentTexts": comments,
 			})
 		} else {
-			return errorMsg(c, "Comment not found")
+			return errorMsg(c, "Comments or event not found")
 		}
 	})
 
