@@ -184,6 +184,46 @@ func main() {
 		}
 	})
 
+	//Follow API
+	app.Put("/follow/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		response := follow(db, follower_id, followed_id)
+
+		if response == "true" {
+			return successMsg(c, "Successfully followed")
+		} else {
+			return errorMsg(c, response)
+		}
+	})
+
+	app.Delete("/unfollow/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		response := unfollow(db, follower_id, followed_id)
+
+		if response == "true" {
+			return successMsg(c, "Successfully unfollowed")
+		} else {
+			return errorMsg(c, response)
+		}
+	})
+
+	app.Get("/getFollowedUsers/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := getAllFollowedUsers(db, userID)
+
+		if len(response) == 0 {
+			return errorMsg(c, "No followed user found")
+		} else {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"followed_users": response,
+				"error":          false,
+			})
+		}
+
+	})
+
 	// Trips API
 
 	app.Post("/addTrip", func(c *fiber.Ctx) error {
