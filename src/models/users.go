@@ -1,7 +1,8 @@
-package main
+package models
 
 import (
 	"database/sql"
+	"diorama/v2/auth"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
@@ -15,7 +16,7 @@ type userResponse struct {
 	Email    string `json:"email"`
 }
 
-func getUserById(db *sql.DB, id string) *userResponse {
+func GetUserById(db *sql.DB, id string) *userResponse {
 	query := `SELECT id, username, name, email FROM users where id=$1`
 	rows, err := db.Query(query, id)
 	var res *userResponse
@@ -46,7 +47,7 @@ func getUserById(db *sql.DB, id string) *userResponse {
 	return res
 }
 
-func setUserDetail(db *sql.DB, userID string, username string, name string, email string) string {
+func SetUserDetail(db *sql.DB, userID string, username string, name string, email string) string {
 	log.Printf("update user with ID= " + userID)
 	insertDynStmt := `UPDATE users SET
     username = $1,
@@ -63,7 +64,7 @@ func setUserDetail(db *sql.DB, userID string, username string, name string, emai
 	return "true"
 }
 
-func setUserPassword(db *sql.DB, userID int, oldPassword string, newPassword string) string {
+func SetUserPassword(db *sql.DB, userID int, oldPassword string, newPassword string) string {
 	query := `SELECT password FROM users where id=$1`
 	var currPassword string
 	err := db.QueryRow(query, userID).Scan(&currPassword)
@@ -72,7 +73,7 @@ func setUserPassword(db *sql.DB, userID int, oldPassword string, newPassword str
 		return err.Error()
 	}
 
-	if !CheckPasswordHash(oldPassword, currPassword) {
+	if !auth.CheckPasswordHash(oldPassword, currPassword) {
 		return "Old password doesn't match!"
 	}
 
@@ -100,7 +101,7 @@ func setUserPassword(db *sql.DB, userID int, oldPassword string, newPassword str
 	return "true"
 }
 
-func getPPByID(db *sql.DB, id string) []byte {
+func GetPPByID(db *sql.DB, id string) []byte {
 	query := `SELECT profile_picture FROM users where id=$1`
 	var response []byte
 	rows, err := db.Query(query, id)
@@ -122,7 +123,7 @@ func getPPByID(db *sql.DB, id string) []byte {
 	return response
 }
 
-func setUserPP(db *sql.DB, picture []byte, id string) string {
+func SetUserPP(db *sql.DB, picture []byte, id string) string {
 	log.Println("Update picture at user ID=" + id)
 	insertDynStmt := `update users set profile_picture=$1 where id=$2`
 	_, err := db.Exec(insertDynStmt, picture, id)
@@ -135,7 +136,7 @@ func setUserPP(db *sql.DB, picture []byte, id string) string {
 	return "true"
 }
 
-func deleteUser(db *sql.DB, userID string) string {
+func DeleteUser(db *sql.DB, userID string) string {
 	log.Printf("delete user with ID= " + userID)
 	query := `delete from users where id=$1`
 	_, err := db.Exec(query, userID)

@@ -1,11 +1,11 @@
-package main
+package models
 
 import (
 	"database/sql"
 	"log"
 )
 
-func follow(db *sql.DB, follower_id string, followed_id string) string {
+func Follow(db *sql.DB, follower_id string, followed_id string) string {
 
 	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
 	rows, err := db.Query(query, follower_id, followed_id)
@@ -33,7 +33,7 @@ func follow(db *sql.DB, follower_id string, followed_id string) string {
 	return "true"
 }
 
-func unfollow(db *sql.DB, follower_id string, followed_id string) string {
+func Unfollow(db *sql.DB, follower_id string, followed_id string) string {
 
 	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
 	rows, err := db.Query(query, follower_id, followed_id)
@@ -67,7 +67,7 @@ type followResponse struct {
 	Username string `json:"username"`
 }
 
-func getAllFollowedUsers(db *sql.DB, id string) []*followResponse {
+func GetAllFollowedUsers(db *sql.DB, id string) []*followResponse {
 	query := `SELECT f.followed_id as user_id, u.username from users u, following f where f.followed_id=u.id and f.follower_id=$1`
 	rows, err := db.Query(query, id)
 	var res []*followResponse
@@ -97,7 +97,7 @@ func getAllFollowedUsers(db *sql.DB, id string) []*followResponse {
 	return res
 }
 
-func checkIfFollowed(db *sql.DB, follower_id string, followed_id string) (string, bool) {
+func CheckIfFollowed(db *sql.DB, follower_id string, followed_id string) (string, bool) {
 	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
 	rows, err := db.Query(query, follower_id, followed_id)
 	if err != nil {

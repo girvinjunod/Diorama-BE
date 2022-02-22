@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func addEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, picture []byte) (string, int) {
+func AddEvent(db *sql.DB, trip_id string, user_id string, caption string, event_date string, picture []byte) (string, int) {
 	log.Println("Add new event")
 	event, err := time.Parse("2006-01-02", event_date)
 	if err != nil {
@@ -37,7 +37,7 @@ type eventResponse struct {
 	PostTime  string `json:"postTime"`
 }
 
-func getEventDetailByID(db *sql.DB, id string) *eventResponse {
+func GetEventDetailByID(db *sql.DB, id string) *eventResponse {
 	query := `SELECT id, trip_id, user_id, caption, event_date, post_time FROM events where id=$1`
 	rows, err := db.Query(query, id)
 	var res *eventResponse
@@ -72,7 +72,7 @@ func getEventDetailByID(db *sql.DB, id string) *eventResponse {
 	return res
 }
 
-func setEventDetail(db *sql.DB, eventID string, caption string, event_date string) string {
+func SetEventDetail(db *sql.DB, eventID string, caption string, event_date string) string {
 	log.Printf("update event with ID= " + eventID)
 	insertDynStmt := `UPDATE events SET
     caption = $1,
@@ -88,7 +88,7 @@ func setEventDetail(db *sql.DB, eventID string, caption string, event_date strin
 	return "true"
 }
 
-func setEventPicture(db *sql.DB, picture []byte, eventID string) string {
+func SetEventPicture(db *sql.DB, picture []byte, eventID string) string {
 	log.Println("Change picture at event ID=" + eventID)
 	insertDynStmt := `update events set picture=$1 where id=$2`
 	_, err := db.Exec(insertDynStmt, picture, eventID)
@@ -101,7 +101,7 @@ func setEventPicture(db *sql.DB, picture []byte, eventID string) string {
 	return "true"
 }
 
-func getEventPictureByID(db *sql.DB, id string) []byte {
+func GetEventPictureByID(db *sql.DB, id string) []byte {
 	log.Println("Get event picture with ID " + id)
 	query := `SELECT picture FROM events where id=$1`
 	rows, err := db.Query(query, id)
@@ -124,7 +124,7 @@ func getEventPictureByID(db *sql.DB, id string) []byte {
 	return response
 }
 
-func deleteEvent(db *sql.DB, eventID string) string {
+func DeleteEvent(db *sql.DB, eventID string) string {
 	log.Printf("delete event with ID= " + eventID)
 	query := `delete from events where id=$1`
 	_, err := db.Exec(query, eventID)
@@ -145,7 +145,7 @@ type timelineResponse struct {
 	TripName   string `json:"tripname"`
 }
 
-func getTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
+func GetTimeline(db *sql.DB, userID string, limit int) []*timelineResponse {
 	log.Println("Get Timeline")
 	query := `SELECT u.username as Username, f.followed_id as UserFeedID, e.id as EventID, e.caption as Caption, t.trip_name FROM users u, following f, events e, trips t where f.follower_id = $1 and u.id=f.followed_id and f.followed_id=e.user_id and e.trip_id = t.id limit $2`
 	rows, err := db.Query(query, userID, limit)

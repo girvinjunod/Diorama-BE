@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func addComment(db *sql.DB, event_id int, user_id int, text string) (string, int) {
+func AddComment(db *sql.DB, event_id int, user_id int, text string) (string, int) {
 	log.Println("Add comment")
 
 	insertDynStmt := `insert into comments (event_id, user_id, text, comment_time) values($1,$2,$3,$4) RETURNING id`
@@ -31,7 +31,7 @@ type commentResponse struct {
 	CommentTime string `json:"commentTime"`
 }
 
-func getCommentDetailById(db *sql.DB, id string) *commentResponse {
+func GetCommentDetailById(db *sql.DB, id string) *commentResponse {
 	query := `SELECT id, event_id, user_id, text,comment_time FROM comments where id=$1`
 	rows, err := db.Query(query, id)
 	var res *commentResponse
@@ -71,7 +71,7 @@ type commentResponse2 struct {
 	CommentTime string `json:"commentTime"`
 }
 
-func getAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResponse2) {
+func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResponse2) {
 	query := `SELECT c.id as id, c.text as text, c.comment_time as comment_time FROM events e, comments c where e.id=$1 and e.id=c.event_id`
 	rows, err := db.Query(query, eventID)
 	var res []*commentResponse2
@@ -102,7 +102,7 @@ func getAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResp
 	return eventID, res
 }
 
-func setCommentDetail(db *sql.DB, commentID string, text string) string {
+func SetCommentDetail(db *sql.DB, commentID string, text string) string {
 	log.Printf("update comment with ID= " + commentID)
 	insertDynStmt := `UPDATE comments SET
     text = $1
@@ -117,7 +117,7 @@ func setCommentDetail(db *sql.DB, commentID string, text string) string {
 	return "true"
 }
 
-func deleteComment(db *sql.DB, commentID string) string {
+func DeleteComment(db *sql.DB, commentID string) string {
 	log.Printf("delete comment with ID= " + commentID)
 	query := `delete from comments where id=$1`
 	_, err := db.Exec(query, commentID)

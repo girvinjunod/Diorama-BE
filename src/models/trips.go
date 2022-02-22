@@ -1,4 +1,4 @@
-package main
+package models
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func addTrip(db *sql.DB, user_id int, start_date string, end_date string, trip_name string, location_name string) (string, int) {
+func AddTrip(db *sql.DB, user_id int, start_date string, end_date string, trip_name string, location_name string) (string, int) {
 	log.Println("Add trip")
 	start, err := time.Parse("2006-01-02", start_date)
 	if err != nil {
@@ -41,7 +41,7 @@ type tripResponse struct {
 	LocationName string `json:"locationName"`
 }
 
-func getTripDetailById(db *sql.DB, id string) *tripResponse {
+func GetTripDetailById(db *sql.DB, id string) *tripResponse {
 	query := `SELECT id, user_id, start_date, end_date, trip_name, location_name FROM trips where id=$1`
 	rows, err := db.Query(query, id)
 	var res *tripResponse
@@ -76,7 +76,7 @@ func getTripDetailById(db *sql.DB, id string) *tripResponse {
 	return res
 }
 
-func getAllEventsFromTrip(db *sql.DB, id string) (string, []int) {
+func GetAllEventsFromTrip(db *sql.DB, id string) (string, []int) {
 	query := `SELECT e.id as eventID FROM trips t, events e where t.id=$1 and t.id=e.trip_id`
 	rows, err := db.Query(query, id)
 	var res []int
@@ -98,7 +98,7 @@ func getAllEventsFromTrip(db *sql.DB, id string) (string, []int) {
 	return id, res
 }
 
-func setTripDetail(db *sql.DB, tripID string, start_date string, end_date string, trip_name string, location_name string) string {
+func SetTripDetail(db *sql.DB, tripID string, start_date string, end_date string, trip_name string, location_name string) string {
 	log.Printf("update trip with ID= " + tripID)
 	insertDynStmt := `UPDATE trips SET
     start_date = $1,
@@ -116,7 +116,7 @@ func setTripDetail(db *sql.DB, tripID string, start_date string, end_date string
 	return "true"
 }
 
-func deleteTrip(db *sql.DB, tripID string) string {
+func DeleteTrip(db *sql.DB, tripID string) string {
 	log.Printf("delete trip with ID= " + tripID)
 	query := `delete from trips where id=$1`
 	_, err := db.Exec(query, tripID)

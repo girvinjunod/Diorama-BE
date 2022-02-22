@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"database/sql"
@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func register(db *sql.DB, username string, email string, name string, password string) string {
+func Register(db *sql.DB, username string, email string, name string, password string) string {
 	log.Println("register")
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 14)
