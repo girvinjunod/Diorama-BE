@@ -224,6 +224,24 @@ func main() {
 
 	})
 
+	app.Get("/checkIfFollowed/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		err, response := checkIfFollowed(db, follower_id, followed_id)
+
+		if err == "" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"is_followed": response,
+				"error":       false,
+			})
+		} else {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"msg":   "Failed to check",
+				"error": true,
+			})
+		}
+	})
+
 	// Trips API
 
 	app.Post("/addTrip", func(c *fiber.Ctx) error {

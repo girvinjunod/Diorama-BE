@@ -38,6 +38,7 @@ func unfollow(db *sql.DB, follower_id string, followed_id string) string {
 	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
 	rows, err := db.Query(query, follower_id, followed_id)
 	if err != nil {
+		log.Println(err)
 		return err.Error()
 	}
 	exist := false
@@ -94,4 +95,19 @@ func getAllFollowedUsers(db *sql.DB, id string) []*followResponse {
 
 	}
 	return res
+}
+
+func checkIfFollowed(db *sql.DB, follower_id string, followed_id string) (string, bool) {
+	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
+	rows, err := db.Query(query, follower_id, followed_id)
+	if err != nil {
+		log.Println(err)
+		return err.Error(), false
+	}
+	exist := false
+	defer rows.Close()
+	for rows.Next() {
+		exist = true
+	}
+	return "", exist
 }
