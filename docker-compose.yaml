@@ -1,0 +1,28 @@
+version: '3'
+services:
+  server:
+    build: .
+    depends_on:
+      - "postgres"
+    ports:
+      - 3000:3000
+    env_file: ./.env
+    environment:
+      - PQ_HOST=postgres
+      - PQ_USER=postgres
+      - PQ_PASSWORD=$PQ_PASSWORD
+      - PQ_DBNAME=postgres
+  postgres:
+    image: postgres:14.2
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/diorama.sql:/docker-entrypoint-initdb.d/diorama.sql
+    env_file: ./.env
+    environment:
+      - POSTGRES_PASSWORD=$PQ_PASSWORD
+
+
+
+  
+

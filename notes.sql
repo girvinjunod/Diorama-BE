@@ -18,6 +18,9 @@ CREATE TABLE users (
 INSERT INTO users (username, email, name, password) 
 VALUES ('girvinjunod', 'girvinjunod@gmail.com', 'Girvin Junod', 'aaaaaa');
 
+INSERT INTO users (username, email, name, password) 
+VALUES ('kerangajaib', 'kerang@gmail.com', 'Kerang Ajaib', 'aaaaaa');
+
 CREATE TABLE following (
     follower_id int not null,
     followed_id int not null,
@@ -84,3 +87,5 @@ CREATE TABLE comments(
 	  REFERENCES users(id)
 	  ON DELETE CASCADE
 );
+
+pg_dump diorama > db/diorama.sql -U diorama -h localhost

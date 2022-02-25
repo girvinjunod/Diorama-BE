@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +15,7 @@ import (
 func goDotEnvVariable(key string) string {
 
 	// load .env file
-	err := godotenv.Load(".env")
+	err := godotenv.Load("../.env")
 
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -26,22 +25,22 @@ func goDotEnvVariable(key string) string {
 }
 
 var (
-	host     = goDotEnvVariable("HOST")
+	host     = goDotEnvVariable("PQ_HOST")
 	port     = 5432
-	user     = goDotEnvVariable("USER")
-	password = goDotEnvVariable("PASSWORD")
-	dbname   = goDotEnvVariable("DBNAME")
+	user     = goDotEnvVariable("PQ_USER")
+	password = goDotEnvVariable("PQ_PASSWORD")
+	dbname   = goDotEnvVariable("PQ_DBNAME")
 )
 
 func main() {
 	log.Println("Starting server on " + host)
 	app := fiber.New()
 
-	app.Static("/", "./public")
+	app.Static("/public", "../public")
 
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-
+	// log.Println(psqlconn)
 	// open database
 	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
@@ -59,65 +58,20 @@ func main() {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("Hello")
+
 		return c.SendString("Hello, World 👋!")
 	})
 
 	app.Get("/getUserByID/:id", func(c *fiber.Ctx) error {
-		type userResponse struct {
-			Id       int    `json:"id"`
-			Username string `json:"username"`
-			Email    string `json:"email"`
-		}
 		id := c.Params("id")
-		query := `SELECT id, username, email FROM users where id=$1`
-		rows, err := db.Query(query, id)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer rows.Close()
-		var response string
-		for rows.Next() {
-			var id int
-			var username string
-			var email string
-			if err := rows.Scan(&id, &username, &email); err != nil {
-				log.Fatal(err)
-			}
-
-			res := &userResponse{
-				Id:       id,
-				Username: username,
-				Email:    email,
-			}
-
-			reply, _ := json.Marshal(res)
-			response = string(reply)
-			log.Println(res.Username)
-			log.Println(res.Email)
-		}
+		response := getUserByID(db, id)
 		return c.SendString(response)
 	},
 	)
 
 	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		query := `SELECT profile_picture FROM users where id=$1`
-		rows, err := db.Query(query, id)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		defer rows.Close()
-		var response []byte
-		for rows.Next() {
-			var profile_picture []byte
-			if err := rows.Scan(&profile_picture); err != nil {
-				log.Fatal(err)
-			}
-
-			response = profile_picture
-		}
+		response := getPPByID(db, id)
 		return c.Send(response)
 	},
 	)
