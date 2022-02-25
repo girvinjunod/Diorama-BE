@@ -6,6 +6,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.27.0
 	github.com/joho/godotenv v1.4.0
 	github.com/lib/pq v1.10.4
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 )
 
 require (

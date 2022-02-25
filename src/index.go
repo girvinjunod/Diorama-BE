@@ -2,10 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"diorama/v2/auth"
+	"diorama/v2/models"
+	"diorama/v2/utils"
 	"fmt"
+	"io/ioutil"
+
 	"log"
 	"os"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -40,7 +44,7 @@ func main() {
 
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	// log.Println(psqlconn)
+	log.Println(psqlconn)
 	// open database
 	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
@@ -58,51 +62,488 @@ func main() {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("Hello")
-
-		return c.SendString("Hello, World 👋!")
+		return utils.SuccessMsg(c, "Hello World!")
 	})
+
+	// Auth API
+
+	app.Post("/register", func(c *fiber.Ctx) error {
+		type User struct {
+			Username string `json:"username"`
+			Email    string `json:"email"`
+			Name     string `json:"name"`
+			Password string `json:"password"`
+		}
+		p := new(User)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+		res := auth.Register(db, p.Username, p.Email, p.Name, p.Password)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully registered user")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
+	// User API
 
 	app.Get("/getUserByID/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		response := getUserByID(db, id)
-		return c.SendString(response)
+		response := models.GetUserById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return utils.ErrorMsg(c, "User not found")
+		}
 	},
 	)
+
+	app.Put("/setUserDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		type User struct {
+			Username string `json:"Username"`
+			Name     string `json:"Name"`
+			Email    string `json:"Email"`
+		}
+		p := new(User)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res := models.SetUserDetail(db, id, p.Username, p.Name, p.Email)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully updated user details")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
+	app.Post("/setUserPassword", func(c *fiber.Ctx) error {
+		type User struct {
+			UserId      int    `json:"userID"`
+			OldPassword string `json:"OldPassword"`
+			NewPassword string `json:"NewPassword"`
+		}
+		p := new(User)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res := models.SetUserPassword(db, p.UserId, p.OldPassword, p.NewPassword)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully updated user password")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
 
 	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		response := getPPByID(db, id)
-		return c.Send(response)
+		response := models.GetPPByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
 	},
 	)
 
-	//TODO
-	app.Post("/addTrip", func(c *fiber.Ctx) error {
-		insertDynStmt := `insert into trips (user_id, start_date, end_date, trip_name, location_name) values($1,$2,$3,$4,$5)`
-		_, err = db.Exec(insertDynStmt, "1", time.Now(), time.Now().AddDate(0, 0, 10), "Jalan-jalan ke Bandung", "ITB")
-
+	app.Put("/setUserPP/:id", func(c *fiber.Ctx) error {
+		file, err := c.FormFile("picture")
 		if err != nil {
-			log.Fatal(err)
+			return utils.ErrorMsg(c, err.Error())
+		}
+		buffer, err := file.Open()
+		if err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+		defer buffer.Close()
+
+		data, err := ioutil.ReadAll(buffer)
+		if err != nil {
+			utils.ErrorMsg(c, err.Error())
 		}
 
-		return c.SendString("hi")
+		userID := c.Params("id")
+
+		res := models.SetUserPP(db, data, userID)
+
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully changed profile picture")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
 	})
 
-	//TODO
+	app.Delete("/deleteUser/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.DeleteUser(db, id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "User successfully deleted")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	//Follow API
+	app.Put("/follow/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		response := models.Follow(db, follower_id, followed_id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "Successfully followed")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	app.Delete("/unfollow/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		response := models.Unfollow(db, follower_id, followed_id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "Successfully unfollowed")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	app.Get("/getFollowedUsers/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := models.GetAllFollowedUsers(db, userID)
+
+		if len(response) == 0 {
+			return utils.ErrorMsg(c, "No followed user found")
+		} else {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"followed_users": response,
+				"error":          false,
+			})
+		}
+
+	})
+
+	app.Get("/checkIfFollowed/:followerid/:followedid", func(c *fiber.Ctx) error {
+		follower_id := c.Params("followerid")
+		followed_id := c.Params("followedid")
+		err, response := models.CheckIfFollowed(db, follower_id, followed_id)
+
+		if err == "" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"is_followed": response,
+				"error":       false,
+			})
+		} else {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"msg":   "Failed to check",
+				"error": true,
+			})
+		}
+	})
+
+	// Trips API
+
+	app.Post("/addTrip", func(c *fiber.Ctx) error {
+		type Trip struct {
+			UserId       int    `json:"UserID"`
+			StartDate    string `json:"StartDate"`
+			EndDate      string `json:"EndDate"`
+			TripName     string `json:"TripName"`
+			LocationName string `json:"LocationName"`
+		}
+		p := new(Trip)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res, id := models.AddTrip(db, p.UserId, p.StartDate, p.EndDate, p.TripName, p.LocationName)
+		if res == "true" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"TripID": id,
+				"error":  false,
+			})
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
+	app.Get("/getTripDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetTripDetailById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return utils.ErrorMsg(c, "Trip not found")
+		}
+	},
+	)
+
+	app.Put("/setTripDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		type Trip struct {
+			StartDate    string `json:"StartDate"`
+			EndDate      string `json:"EndDate"`
+			TripName     string `json:"TripName"`
+			LocationName string `json:"LocationName"`
+		}
+		p := new(Trip)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res := models.SetTripDetail(db, id, p.StartDate, p.EndDate, p.TripName, p.LocationName)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully updated trip details")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+
+	})
+
+	app.Delete("/deleteTrip/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.DeleteTrip(db, id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "Trip successfully deleted")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	// Event API
+
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
-		data, err := os.ReadFile("public/profile-picture/elephant-seal.jpg")
+		file, err := c.FormFile("picture")
 		if err != nil {
-			log.Fatal(err)
+			return utils.ErrorMsg(c, err.Error())
+		}
+		buffer, err := file.Open()
+		if err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+		defer buffer.Close()
+
+		data, err := ioutil.ReadAll(buffer)
+		if err != nil {
+			utils.ErrorMsg(c, err.Error())
 		}
 
-		insertDynStmt := `insert into events (trip_id, user_id, caption, event_date, post_time, picture) values($1,$2,$3,$4,$5,$6)`
-		_, err = db.Exec(insertDynStmt, 1, 1, "Melihat gajah laut", time.Now(), time.Now(), data)
+		TripId := c.FormValue("tripID")
+		UserId := c.FormValue("userID")
+		Caption := c.FormValue("caption")
+		EventDate := c.FormValue("eventDate")
 
-		if err != nil {
-			log.Fatal(err)
+		res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, data)
+		if res == "true" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"EventID": id,
+				"error":   false,
+			})
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
+	app.Get("/getEventDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetEventDetailByID(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return utils.ErrorMsg(c, "Event not found")
+		}
+	},
+	)
+
+	app.Put("/setEventDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		type Event struct {
+			Caption   string `json:"Caption"`
+			EventDate string `json:"EventDate"`
+		}
+		p := new(Event)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
 		}
 
-		return c.SendString("hi")
+		res := models.SetEventDetail(db, id, p.Caption, p.EventDate)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully updated event details")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+
+	})
+
+	app.Put("/setEventPicture/:id", func(c *fiber.Ctx) error {
+		file, err := c.FormFile("picture")
+		if err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+		buffer, err := file.Open()
+		if err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+		defer buffer.Close()
+
+		data, err := ioutil.ReadAll(buffer)
+		if err != nil {
+			utils.ErrorMsg(c, err.Error())
+		}
+
+		eventID := c.Params("id")
+
+		res := models.SetEventPicture(db, data, eventID)
+
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully changed picture")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+
+	})
+
+	app.Get("/getEventPictureByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetEventPictureByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+
+	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		tripId, events := models.GetAllEventsFromTrip(db, id)
+
+		if events != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":    false,
+				"tripID":   tripId,
+				"eventIDs": events,
+			})
+		} else {
+			return utils.ErrorMsg(c, "Trip or Events not found")
+		}
+	})
+
+	app.Get("/getTimeline/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := models.GetTimeline(db, userID, 10)
+
+		if len(response) == 0 {
+			return utils.ErrorMsg(c, "Empty timeline")
+		} else {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"timeline_data": response,
+				"error":         false,
+			})
+		}
+
+	})
+
+	app.Delete("/deleteEvent/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.DeleteEvent(db, id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "Event successfully deleted")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	// Comment API
+
+	app.Post("/addComment", func(c *fiber.Ctx) error {
+		type Comment struct {
+			EventId int    `json:"EventID"`
+			UserId  int    `json:"UserID"`
+			Text    string `json:"Text"`
+		}
+		p := new(Comment)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res, id := models.AddComment(db, p.EventId, p.UserId, p.Text)
+		if res == "true" {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"CommentID": id,
+				"error":     false,
+			})
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
+	app.Get("/getCommentDetailByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetCommentDetailById(db, id)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(response)
+
+		} else {
+			return utils.ErrorMsg(c, "Comment not found")
+		}
+	},
+	)
+
+	app.Put("/setCommentDetail/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		type Comment struct {
+			Text string `json:"Text"`
+		}
+		p := new(Comment)
+		if err := c.BodyParser(p); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res := models.SetCommentDetail(db, id, p.Text)
+		if res == "true" {
+			return utils.SuccessMsg(c, "Successfully updated comment details")
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+
+	})
+
+	app.Delete("/deleteComment/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.DeleteComment(db, id)
+
+		if response == "true" {
+			return utils.SuccessMsg(c, "Comment successfully deleted")
+		} else {
+			return utils.ErrorMsg(c, response)
+		}
+	})
+
+	app.Get("/getCommentsFromEvent/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		eventId, comments := models.GetAllCommentsFromEvent(db, id)
+
+		if comments != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":        false,
+				"eventID":      eventId,
+				"commentTexts": comments,
+			})
+		} else {
+			return utils.ErrorMsg(c, "Comments or event not found")
+		}
 	})
 
 	app.Listen(":3000")
