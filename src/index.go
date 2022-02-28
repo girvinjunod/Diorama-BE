@@ -228,6 +228,21 @@ func main() {
 
 	})
 
+	app.Get("/getFollowers/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := models.GetAllFollowers(db, userID)
+
+		if len(response) == 0 {
+			return utils.ErrorMsg(c, "No followed user found")
+		} else {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"followed_users": response,
+				"error":          false,
+			})
+		}
+
+	})
+
 	app.Get("/checkIfFollowed/:followerid/:followedid", func(c *fiber.Ctx) error {
 		follower_id := c.Params("followerid")
 		followed_id := c.Params("followedid")
