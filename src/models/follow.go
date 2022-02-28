@@ -97,6 +97,36 @@ func GetAllFollowedUsers(db *sql.DB, id string) []*followResponse {
 	return res
 }
 
+func GetAllFollowers(db *sql.DB, id string) []*followResponse {
+	query := `SELECT f.follower_id as user_id, u.username from users u, following f where f.follower_id=u.id and f.followed_id=$1`
+	rows, err := db.Query(query, id)
+	var res []*followResponse
+	if err != nil {
+		log.Println(err)
+		return res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var userid int
+		var username string
+		if err := rows.Scan(&userid, &username); err != nil {
+			log.Println(err)
+			return res
+		}
+
+		response := &followResponse{
+			Error:    "false",
+			UserID:   userid,
+			Username: username,
+		}
+
+		res = append(res, response)
+
+	}
+	return res
+}
+
 func CheckIfFollowed(db *sql.DB, follower_id string, followed_id string) (string, bool) {
 	query := `SELECT *FROM following where follower_id=$1 and followed_id=$2`
 	rows, err := db.Query(query, follower_id, followed_id)
