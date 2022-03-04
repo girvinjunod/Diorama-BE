@@ -31,3 +31,39 @@ func CheckPasswordHash(password string, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
+
+func Login(db *sql.DB, username string, password string) (string, int) {
+	log.Println("login")
+
+	query := `SELECT id, password FROM users WHERE username = $1`
+	rows, err := db.Query(query, username)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error(), -999
+	}
+
+	count := 0
+	var pass_ string
+	var user_id int
+
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&user_id, &pass_); err != nil {
+			log.Println(err)
+			return err.Error(), -999
+		}
+		count++
+	}
+
+	if count > 1 {
+		log.Println(err)
+		return err.Error(), -999
+	}
+	if CheckPasswordHash(password, pass_) == true {
+		return "true", user_id
+	}
+	log.Println(pass_)
+	log.Println(password)
+	return "Invalid login credential", -999
+}
