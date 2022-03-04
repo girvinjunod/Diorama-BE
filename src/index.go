@@ -86,6 +86,30 @@ func main() {
 		}
 	})
 
+	app.Post("/login", func(c *fiber.Ctx) error {
+		type LoginRequest struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+
+		req := new(LoginRequest)
+		if err := c.BodyParser(req); err != nil {
+			return utils.ErrorMsg(c, err.Error())
+		}
+
+		res, id := auth.Login(db, req.Username, req.Password)
+
+		if res == "true" {
+			token, exp, err := auth.CreateJWTToken(id)
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": user})
+		} else {
+			return utils.ErrorMsg(c, res)
+		}
+	})
+
 	// User API
 
 	app.Get("/getUserByID/:id", func(c *fiber.Ctx) error {
