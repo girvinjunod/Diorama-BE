@@ -357,6 +357,22 @@ func main() {
 		}
 	})
 
+	app.Get("/getTripsByUser/:user_id", func(c *fiber.Ctx) error {
+		user_id := c.Params("user_id")
+		id, res := models.GetTripsByUser(db, user_id)
+
+		if res != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error":   false,
+				"user_id": id,
+				"tripIds": res,
+			})
+		} else {
+			return utils.ErrorMsg(c, "Trip not found")
+		}
+	},
+	)
+
 	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
