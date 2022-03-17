@@ -150,3 +150,26 @@ func GetTripsByUser(db *sql.DB, user_id string) (string, []int) {
 	}
 	return user_id, res
 }
+
+func GetTripsImage(db *sql.DB, id string) []byte {
+	log.Println("Get event picture with ID " + id)
+	query := `SELECT picture FROM events where trip_id=$1 LIMIT 1`
+	rows, err := db.Query(query, id)
+	var response []byte
+	if err != nil {
+		log.Println(err)
+		return response
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var picture []byte
+		if err := rows.Scan(&picture); err != nil {
+			log.Println(err)
+			return response
+		}
+
+		response = picture
+	}
+	return response
+}

@@ -373,6 +373,13 @@ func main() {
 	},
 	)
 
+	app.Get("/getTripsImage/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetTripsImage(db, id)
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+
 	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
