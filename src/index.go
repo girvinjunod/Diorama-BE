@@ -212,6 +212,21 @@ func main() {
 		}
 	})
 
+	app.Get("/searchUser/:query", func(c *fiber.Ctx) error {
+		query := c.Params("query")
+		response := models.SearchUser(db, query)
+
+		if response != nil {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"error": false,
+				"users": response,
+			})
+		} else {
+			return utils.ErrorMsg(c, "Users not found")
+		}
+	},
+	)
+
 	//Follow API
 	app.Put("/follow/:followerid/:followedid", func(c *fiber.Ctx) error {
 		follower_id := c.Params("followerid")

@@ -148,3 +148,37 @@ func DeleteUser(db *sql.DB, userID string) string {
 
 	return "true"
 }
+
+type searchResponse struct {
+	Id       int    `json:"id"`
+	Username string `json:"username"`
+}
+
+func SearchUser(db *sql.DB, query string) []*searchResponse {
+	log.Println("Search user")
+	sqlquery := `SELECT id, username FROM users where username LIKE $1`
+	rows, err := db.Query(sqlquery, query+"%")
+	var response []*searchResponse
+	if err != nil {
+		log.Println(err)
+		return response
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var username string
+		if err := rows.Scan(&id, &username); err != nil {
+			log.Println(err)
+			return response
+		}
+
+		res := &searchResponse{
+			Id:       id,
+			Username: username,
+		}
+		response = append(response, res)
+
+	}
+	return response
+}
