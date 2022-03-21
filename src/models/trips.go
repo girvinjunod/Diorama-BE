@@ -128,3 +128,48 @@ func DeleteTrip(db *sql.DB, tripID string) string {
 
 	return "true"
 }
+
+func GetTripsByUser(db *sql.DB, user_id string) (string, []int) {
+	query := `SELECT id FROM trips where user_id=$1`
+	rows, err := db.Query(query, user_id)
+	var res []int
+	if err != nil {
+		return err.Error(), res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var tripid int
+		if err := rows.Scan(&tripid); err != nil {
+			log.Println(err)
+			return err.Error(), res
+		}
+
+		res = append(res, tripid)
+
+	}
+	return user_id, res
+}
+
+func GetTripsImage(db *sql.DB, id string) []byte {
+	log.Println("Get event picture with ID " + id)
+	query := `SELECT picture FROM events where trip_id=$1 LIMIT 1`
+	rows, err := db.Query(query, id)
+	var response []byte
+	if err != nil {
+		log.Println(err)
+		return response
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var picture []byte
+		if err := rows.Scan(&picture); err != nil {
+			log.Println(err)
+			return response
+		}
+
+		response = picture
+	}
+	return response
+}
