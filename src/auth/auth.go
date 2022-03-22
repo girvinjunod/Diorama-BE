@@ -7,14 +7,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Register(db *sql.DB, username string, email string, name string, password string) string {
+func Register(db *sql.DB, username string, email string, name string, password string) (string, int) {
 	log.Println("register")
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 
 	if err != nil {
 		log.Println(err)
-		return err.Error()
+		return err.Error(), -999
 	}
 
 	insertDynStmt := `insert into users (username, email, name, password) values($1,$2,$3,$4)`
@@ -22,9 +22,34 @@ func Register(db *sql.DB, username string, email string, name string, password s
 
 	if err != nil {
 		log.Println(err)
-		return err.Error()
+		return err.Error(), -999
 	}
-	return "true"
+	query := `SELECT id FROM users WHERE username = $1`
+	rows, err := db.Query(query, username)
+
+	if err != nil {
+		log.Println(err)
+		return err.Error(), -999
+	}
+
+	count := 0
+	var user_id int
+
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&user_id); err != nil {
+			log.Println(err)
+			return err.Error(), -999
+		}
+		count++
+	}
+
+	if count > 1 {
+		log.Println(err)
+		return err.Error(), -999
+	}
+
+	return "true", user_id
 }
 
 func CheckPasswordHash(password string, hash string) bool {

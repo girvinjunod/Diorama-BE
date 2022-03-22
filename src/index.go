@@ -78,9 +78,13 @@ func main() {
 		if err := c.BodyParser(p); err != nil {
 			return utils.ErrorMsg(c, err.Error())
 		}
-		res := auth.Register(db, p.Username, p.Email, p.Name, p.Password)
+		res, id := auth.Register(db, p.Username, p.Email, p.Name, p.Password)
 		if res == "true" {
-			return utils.SuccessMsg(c, "Successfully registered user")
+			token, exp, err := auth.CreateJWTToken(id)
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": user, "error": false})
 		} else {
 			return utils.ErrorMsg(c, res)
 		}
