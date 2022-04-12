@@ -12,20 +12,22 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	jwtware "github.com/gofiber/jwt/v3"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
-// func goDotEnvVariable(key string) string {
+func goDotEnvVariable(key string) string {
 
-// 	// load .env file
-// 	err := godotenv.Load("../.env")
+	// load .env file
+	err := godotenv.Load("../.env")
 
-// 	if err != nil {
-// 		log.Fatalf("Error loading .env file")
-// 	}
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
-// 	return os.Getenv(key)
-// }
+	return os.Getenv(key)
+}
 
 // var (
 // 	host     = goDotEnvVariable("PQ_HOST")
@@ -37,6 +39,8 @@ import (
 
 func main() {
 	port := os.Getenv("PORT")
+	secret_key := goDotEnvVariable("SECRET_KEY")
+	// log.Println(secret_key)
 	cnxn := "postgres://sdrgqiodobzvzq:0ec897ee53f52a65f994301d697abe14f5cac794844ebb127adef380513f0c4d@ec2-3-209-124-113.compute-1.amazonaws.com:5432/dbb0rrl7sa5hb4"
 	// log.Println("Starting server on " + host)
 	app := fiber.New()
@@ -61,6 +65,7 @@ func main() {
 
 	log.Println("Succesfully connected to database")
 
+	//unrestricted routes
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("Hello")
 		return utils.SuccessMsg(c, "Hello World!")
@@ -98,10 +103,10 @@ func main() {
 			return utils.ErrorMsg(c, err.Error())
 		}
 
-		res, id := auth.Login(db, req.Username, req.Password)
+		res, _ := auth.Login(db, req.Username, req.Password)
 
 		if res == "true" {
-			token, exp, err := auth.CreateJWTToken(id)
+			token, exp, err := auth.CreateJWTToken(req.Username)
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
 			}
@@ -110,6 +115,21 @@ func main() {
 			return utils.ErrorMsg(c, res)
 		}
 	})
+
+	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetPPByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+	//Restricted Routes
+	// JWT Middleware
+	app.Use(jwtware.New(jwtware.Config{
+		SigningKey: []byte(secret_key),
+	}))
 
 	// User API
 
@@ -164,16 +184,6 @@ func main() {
 			return utils.ErrorMsg(c, res)
 		}
 	})
-
-	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetPPByID(db, id)
-		// if len(response) == 0 {
-		// 	return errorMsg(c, "No picture found")
-		// }
-		return c.Status(fiber.StatusOK).Send(response)
-	},
-	)
 
 	app.Put("/setUserPP/:id", func(c *fiber.Ctx) error {
 		file, err := c.FormFile("picture")
