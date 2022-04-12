@@ -528,7 +528,7 @@ func main() {
 
 	app.Get("/getTimeline/:id", func(c *fiber.Ctx) error {
 		userID := c.Params("id")
-		response := models.GetTimeline(db, userID, 10)
+		response := models.GetTimeline(db, userID)
 
 		if len(response) == 0 {
 			return utils.ErrorMsg(c, "Empty timeline")
