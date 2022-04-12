@@ -103,14 +103,14 @@ func main() {
 			return utils.ErrorMsg(c, err.Error())
 		}
 
-		res, _ := auth.Login(db, req.Username, req.Password)
+		res, id := auth.Login(db, req.Username, req.Password)
 
 		if res == "true" {
 			token, exp, err := auth.CreateJWTToken(req.Username)
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
 			}
-			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": req.Username})
+			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": req.Username, "user_id": id})
 		} else {
 			return utils.ErrorMsg(c, res)
 		}
