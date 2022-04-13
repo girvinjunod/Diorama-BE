@@ -125,6 +125,15 @@ func main() {
 		return c.Status(fiber.StatusOK).Send(response)
 	},
 	)
+	app.Get("/getEventPictureByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetEventPictureByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
 	//Restricted Routes
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
@@ -500,16 +509,6 @@ func main() {
 		}
 
 	})
-
-	app.Get("/getEventPictureByID/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetEventPictureByID(db, id)
-		// if len(response) == 0 {
-		// 	return errorMsg(c, "No picture found")
-		// }
-		return c.Status(fiber.StatusOK).Send(response)
-	},
-	)
 
 	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
