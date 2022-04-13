@@ -134,6 +134,13 @@ func main() {
 		return c.Status(fiber.StatusOK).Send(response)
 	},
 	)
+
+	app.Get("/getTripsImage/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetTripsImage(db, id)
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
 	//Restricted Routes
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
@@ -405,13 +412,6 @@ func main() {
 		} else {
 			return utils.ErrorMsg(c, "Trip not found")
 		}
-	},
-	)
-
-	app.Get("/getTripsImage/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetTripsImage(db, id)
-		return c.Status(fiber.StatusOK).Send(response)
 	},
 	)
 
