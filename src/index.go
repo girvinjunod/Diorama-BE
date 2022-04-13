@@ -202,29 +202,42 @@ func main() {
 	})
 
 	app.Put("/setUserPP/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
 		file, err := c.FormFile("picture")
 		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		buffer, err := file.Open()
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		defer buffer.Close()
+			file := c.FormValue("picture")
+			if file == "" {
+				log.Println("Can't get picture")
+				return utils.ErrorMsg(c, err.Error())
+			}
+			buffer := []byte(file)
+			res := models.SetUserPP(db, buffer, userID)
 
-		data, err := ioutil.ReadAll(buffer)
-		if err != nil {
-			utils.ErrorMsg(c, err.Error())
-		}
-
-		userID := c.Params("id")
-
-		res := models.SetUserPP(db, data, userID)
-
-		if res == "true" {
-			return utils.SuccessMsg(c, "Successfully changed profile picture")
+			if res == "true" {
+				return utils.SuccessMsg(c, "Successfully changed profile picture")
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
 		} else {
-			return utils.ErrorMsg(c, res)
+			buffer, err := file.Open()
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			defer buffer.Close()
+
+			data, err := ioutil.ReadAll(buffer)
+			if err != nil {
+				utils.ErrorMsg(c, err.Error())
+			}
+
+			res := models.SetUserPP(db, data, userID)
+
+			if res == "true" {
+				return utils.SuccessMsg(c, "Successfully changed profile picture")
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
+
 		}
 	})
 
@@ -418,34 +431,50 @@ func main() {
 	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
-		file, err := c.FormFile("picture")
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		buffer, err := file.Open()
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		defer buffer.Close()
-
-		data, err := ioutil.ReadAll(buffer)
-		if err != nil {
-			utils.ErrorMsg(c, err.Error())
-		}
-
+		log.Println("Add Event")
 		TripId := c.FormValue("tripID")
 		UserId := c.FormValue("userID")
 		Caption := c.FormValue("caption")
 		EventDate := c.FormValue("eventDate")
-
-		res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, data)
-		if res == "true" {
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"EventID": id,
-				"error":   false,
-			})
+		file, err := c.FormFile("picture")
+		if err != nil {
+			file := c.FormValue("picture")
+			if file == "" {
+				log.Println("Can't get picture")
+				return utils.ErrorMsg(c, err.Error())
+			}
+			buffer := []byte(file)
+			res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, buffer)
+			if res == "true" {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{
+					"EventID": id,
+					"error":   false,
+				})
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
 		} else {
-			return utils.ErrorMsg(c, res)
+			buffer, err := file.Open()
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			defer buffer.Close()
+
+			data, err := ioutil.ReadAll(buffer)
+			if err != nil {
+				utils.ErrorMsg(c, err.Error())
+			}
+
+			res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, data)
+			if res == "true" {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{
+					"EventID": id,
+					"error":   false,
+				})
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
+
 		}
 	})
 
