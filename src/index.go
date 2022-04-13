@@ -205,6 +205,7 @@ func main() {
 		userID := c.Params("id")
 		file, err := c.FormFile("picture")
 		if err != nil {
+			log.Println("File is bytes")
 			file := c.FormValue("picture")
 			if file == "" {
 				log.Println("Can't get picture")
@@ -219,6 +220,7 @@ func main() {
 				return utils.ErrorMsg(c, res)
 			}
 		} else {
+			log.Println("File is file")
 			buffer, err := file.Open()
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
@@ -438,6 +440,7 @@ func main() {
 		EventDate := c.FormValue("eventDate")
 		file, err := c.FormFile("picture")
 		if err != nil {
+			log.Println("File is bytes")
 			file := c.FormValue("picture")
 			if file == "" {
 				log.Println("Can't get picture")
@@ -454,6 +457,7 @@ func main() {
 				return utils.ErrorMsg(c, res)
 			}
 		} else {
+			log.Println("File is file")
 			buffer, err := file.Open()
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
