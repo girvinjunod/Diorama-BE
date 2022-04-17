@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -9,23 +8,28 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func CreateJWTToken(user_id int) (string, int64, error) {
+func CreateJWTToken(username string) (string, int64, error) {
 	//belum disimpen di env
 	exp := time.Now().Add(time.Minute * 30).Unix()
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = user_id
-	claims["exp"] = exp
+
+	// Create the Claims
+	claims := jwt.MapClaims{
+		"user_id": username,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	err := godotenv.Load("../.env")
 	if err != nil {
 		return "", 0, err
 	}
-
 	secret_key := os.Getenv("SECRET_KEY")
-	log.Println(secret_key)
-
+	// log.Println(secret_key)
+	// Generate encoded token and send it as response.
 	t, err := token.SignedString([]byte(secret_key))
+
 	if err != nil {
 		return "", 0, err
 	}

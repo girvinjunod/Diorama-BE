@@ -60,7 +60,7 @@ func Login(db *sql.DB, username string, password string) (string, int) {
 		log.Println(err)
 		return err.Error(), -999
 	}
-	if CheckPasswordHash(password, pass_) == true {
+	if CheckPasswordHash(password, pass_) {
 		return "true", user_id
 	}
 	log.Println(pass_)

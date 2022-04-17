@@ -7,11 +7,12 @@ import (
 	"diorama/v2/utils"
 	"fmt"
 	"io/ioutil"
-
-	"log"
 	"os"
 
+	"log"
+
 	"github.com/gofiber/fiber/v2"
+	jwtware "github.com/gofiber/jwt/v3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -28,25 +29,29 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-var (
-	host     = goDotEnvVariable("PQ_HOST")
-	port     = 5432
-	user     = goDotEnvVariable("PQ_USER")
-	password = goDotEnvVariable("PQ_PASSWORD")
-	dbname   = goDotEnvVariable("PQ_DBNAME")
-)
+// var (
+// 	host     = goDotEnvVariable("PQ_HOST")
+// 	port     = 5432
+// 	user     = goDotEnvVariable("PQ_USER")
+// 	password = goDotEnvVariable("PQ_PASSWORD")
+// 	dbname   = goDotEnvVariable("PQ_DBNAME")
+// )
 
 func main() {
-	log.Println("Starting server on " + host)
+	port := os.Getenv("PORT")
+	secret_key := goDotEnvVariable("SECRET_KEY")
+	// log.Println(secret_key)
+	cnxn := "postgres://sdrgqiodobzvzq:0ec897ee53f52a65f994301d697abe14f5cac794844ebb127adef380513f0c4d@ec2-3-209-124-113.compute-1.amazonaws.com:5432/dbb0rrl7sa5hb4"
+	// log.Println("Starting server on " + host)
 	app := fiber.New()
 
 	app.Static("/public", "../public")
 
-	// connection string
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	log.Println(psqlconn)
+	// // connection string
+	// psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	// log.Println(psqlconn)
 	// open database
-	db, err := sql.Open("postgres", psqlconn)
+	db, err := sql.Open("postgres", cnxn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,6 +65,7 @@ func main() {
 
 	log.Println("Succesfully connected to database")
 
+	//unrestricted routes
 	app.Get("/", func(c *fiber.Ctx) error {
 		log.Println("Hello")
 		return utils.SuccessMsg(c, "Hello World!")
@@ -100,15 +106,46 @@ func main() {
 		res, id := auth.Login(db, req.Username, req.Password)
 
 		if res == "true" {
-			token, exp, err := auth.CreateJWTToken(id)
+			token, exp, err := auth.CreateJWTToken(req.Username)
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
 			}
-			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": user})
+			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": req.Username, "user_id": id})
 		} else {
 			return utils.ErrorMsg(c, res)
 		}
 	})
+
+	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetPPByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+	app.Get("/getEventPictureByID/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetEventPictureByID(db, id)
+		// if len(response) == 0 {
+		// 	return errorMsg(c, "No picture found")
+		// }
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+
+	app.Get("/getTripsImage/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		response := models.GetTripsImage(db, id)
+		return c.Status(fiber.StatusOK).Send(response)
+	},
+	)
+	//Restricted Routes
+	// JWT Middleware
+	app.Use(jwtware.New(jwtware.Config{
+		SigningKey: []byte(secret_key),
+	}))
 
 	// User API
 
@@ -164,40 +201,45 @@ func main() {
 		}
 	})
 
-	app.Get("/getPPByID/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetPPByID(db, id)
-		// if len(response) == 0 {
-		// 	return errorMsg(c, "No picture found")
-		// }
-		return c.Status(fiber.StatusOK).Send(response)
-	},
-	)
-
 	app.Put("/setUserPP/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
 		file, err := c.FormFile("picture")
 		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		buffer, err := file.Open()
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		defer buffer.Close()
+			log.Println("File is bytes")
+			file := c.FormValue("picture")
+			if file == "" {
+				log.Println("Can't get picture")
+				return utils.ErrorMsg(c, err.Error())
+			}
+			buffer := []byte(file)
+			res := models.SetUserPP(db, buffer, userID)
 
-		data, err := ioutil.ReadAll(buffer)
-		if err != nil {
-			utils.ErrorMsg(c, err.Error())
-		}
-
-		userID := c.Params("id")
-
-		res := models.SetUserPP(db, data, userID)
-
-		if res == "true" {
-			return utils.SuccessMsg(c, "Successfully changed profile picture")
+			if res == "true" {
+				return utils.SuccessMsg(c, "Successfully changed profile picture")
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
 		} else {
-			return utils.ErrorMsg(c, res)
+			log.Println("File is file")
+			buffer, err := file.Open()
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			defer buffer.Close()
+
+			data, err := ioutil.ReadAll(buffer)
+			if err != nil {
+				utils.ErrorMsg(c, err.Error())
+			}
+
+			res := models.SetUserPP(db, data, userID)
+
+			if res == "true" {
+				return utils.SuccessMsg(c, "Successfully changed profile picture")
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
+
 		}
 	})
 
@@ -388,44 +430,55 @@ func main() {
 	},
 	)
 
-	app.Get("/getTripsImage/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetTripsImage(db, id)
-		return c.Status(fiber.StatusOK).Send(response)
-	},
-	)
-
 	// Event API
 
 	app.Post("/addEvent", func(c *fiber.Ctx) error {
-		file, err := c.FormFile("picture")
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		buffer, err := file.Open()
-		if err != nil {
-			return utils.ErrorMsg(c, err.Error())
-		}
-		defer buffer.Close()
-
-		data, err := ioutil.ReadAll(buffer)
-		if err != nil {
-			utils.ErrorMsg(c, err.Error())
-		}
-
+		log.Println("Add Event")
 		TripId := c.FormValue("tripID")
 		UserId := c.FormValue("userID")
 		Caption := c.FormValue("caption")
 		EventDate := c.FormValue("eventDate")
-
-		res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, data)
-		if res == "true" {
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"EventID": id,
-				"error":   false,
-			})
+		file, err := c.FormFile("picture")
+		if err != nil {
+			log.Println("File is bytes")
+			file := c.FormValue("picture")
+			if file == "" {
+				log.Println("Can't get picture")
+				return utils.ErrorMsg(c, err.Error())
+			}
+			buffer := []byte(file)
+			res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, buffer)
+			if res == "true" {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{
+					"EventID": id,
+					"error":   false,
+				})
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
 		} else {
-			return utils.ErrorMsg(c, res)
+			log.Println("File is file")
+			buffer, err := file.Open()
+			if err != nil {
+				return utils.ErrorMsg(c, err.Error())
+			}
+			defer buffer.Close()
+
+			data, err := ioutil.ReadAll(buffer)
+			if err != nil {
+				utils.ErrorMsg(c, err.Error())
+			}
+
+			res, id := models.AddEvent(db, TripId, UserId, Caption, EventDate, data)
+			if res == "true" {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{
+					"EventID": id,
+					"error":   false,
+				})
+			} else {
+				return utils.ErrorMsg(c, res)
+			}
+
 		}
 	})
 
@@ -490,16 +543,6 @@ func main() {
 
 	})
 
-	app.Get("/getEventPictureByID/:id", func(c *fiber.Ctx) error {
-		id := c.Params("id")
-		response := models.GetEventPictureByID(db, id)
-		// if len(response) == 0 {
-		// 	return errorMsg(c, "No picture found")
-		// }
-		return c.Status(fiber.StatusOK).Send(response)
-	},
-	)
-
 	app.Get("/getEventsFromTrip/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
 		tripId, events := models.GetAllEventsFromTrip(db, id)
@@ -517,7 +560,7 @@ func main() {
 
 	app.Get("/getTimeline/:id", func(c *fiber.Ctx) error {
 		userID := c.Params("id")
-		response := models.GetTimeline(db, userID, 10)
+		response := models.GetTimeline(db, userID)
 
 		if len(response) == 0 {
 			return utils.ErrorMsg(c, "Empty timeline")
@@ -623,5 +666,11 @@ func main() {
 		}
 	})
 
-	app.Listen(":3000")
+	if port != "" {
+		fmt.Println("Server is running on port: " + port)
+		app.Listen(":" + port)
+	} else {
+		fmt.Println("Server is running on port: 3000")
+		app.Listen(":3000")
+	}
 }
