@@ -89,3 +89,6 @@ CREATE TABLE comments(
 );
 
 pg_dump diorama > db/diorama.sql -U diorama -h localhost
+
+ssh -i ~/.ssh/gcloud g13519097@34.101.123.15
+./cloud_sql_proxy --instances=stei-itb-13519097:asia-southeast2:diorama-db=tcp:3306     --credential_file=key.json &>     proxy.log &
