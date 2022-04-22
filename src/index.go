@@ -12,7 +12,6 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	jwtware "github.com/gofiber/jwt/v3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -144,9 +143,9 @@ func main() {
 	)
 	//Restricted Routes
 	// JWT Middleware
-	app.Use(jwtware.New(jwtware.Config{
-		SigningKey: []byte(secret_key),
-	}))
+	// app.Use(jwtware.New(jwtware.Config{
+	// 	SigningKey: []byte(secret_key),
+	// }))
 
 	// User API
 
