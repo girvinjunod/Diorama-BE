@@ -671,7 +671,7 @@ func main() {
 		fmt.Println("Server is running on port: " + port)
 		app.Listen(":" + port)
 	} else {
-		fmt.Println("Server is running on port: 3000")
-		app.Listen(":3000")
+		fmt.Println("Server is running on port: 8080")
+		app.Listen(":8080")
 	}
 }
