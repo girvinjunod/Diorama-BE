@@ -12,6 +12,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	jwtware "github.com/gofiber/jwt/v3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -38,7 +39,7 @@ var (
 
 func main() {
 	serverport := os.Getenv("PORT")
-	// secret_key := goDotEnvVariable("SECRET_KEY")
+	secret_key := goDotEnvVariable("SECRET_KEY")
 	// log.Println(secret_key)
 	// cnxn := "postgres://sdrgqiodobzvzq:0ec897ee53f52a65f994301d697abe14f5cac794844ebb127adef380513f0c4d@ec2-3-209-124-113.compute-1.amazonaws.com:5432/dbb0rrl7sa5hb4"
 	// log.Println("Starting server on " + host)
@@ -143,9 +144,9 @@ func main() {
 	)
 	//Restricted Routes
 	// JWT Middleware
-	// app.Use(jwtware.New(jwtware.Config{
-	// 	SigningKey: []byte(secret_key),
-	// }))
+	app.Use(jwtware.New(jwtware.Config{
+		SigningKey: []byte(secret_key),
+	}))
 
 	// User API
 
