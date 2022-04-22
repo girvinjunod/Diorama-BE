@@ -31,7 +31,7 @@ func goDotEnvVariable(key string) string {
 
 var (
 	host     = goDotEnvVariable("PQ_HOST")
-	port     = "5432"
+	port     = goDotEnvVariable("PQ_PORT")
 	user     = goDotEnvVariable("PQ_USER")
 	password = goDotEnvVariable("PQ_PASSWORD")
 	dbname   = goDotEnvVariable("PQ_DBNAME")
