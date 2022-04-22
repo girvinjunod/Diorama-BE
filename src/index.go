@@ -29,29 +29,30 @@ func goDotEnvVariable(key string) string {
 	return os.Getenv(key)
 }
 
-// var (
-// 	host     = goDotEnvVariable("PQ_HOST")
-// 	port     = 5432
-// 	user     = goDotEnvVariable("PQ_USER")
-// 	password = goDotEnvVariable("PQ_PASSWORD")
-// 	dbname   = goDotEnvVariable("PQ_DBNAME")
-// )
+var (
+	host     = goDotEnvVariable("PQ_HOST")
+	port     = "5432"
+	user     = goDotEnvVariable("PQ_USER")
+	password = goDotEnvVariable("PQ_PASSWORD")
+	dbname   = goDotEnvVariable("PQ_DBNAME")
+)
 
 func main() {
-	port := os.Getenv("PORT")
+	serverport := os.Getenv("PORT")
 	secret_key := goDotEnvVariable("SECRET_KEY")
 	// log.Println(secret_key)
-	cnxn := "postgres://sdrgqiodobzvzq:0ec897ee53f52a65f994301d697abe14f5cac794844ebb127adef380513f0c4d@ec2-3-209-124-113.compute-1.amazonaws.com:5432/dbb0rrl7sa5hb4"
+	// cnxn := "postgres://sdrgqiodobzvzq:0ec897ee53f52a65f994301d697abe14f5cac794844ebb127adef380513f0c4d@ec2-3-209-124-113.compute-1.amazonaws.com:5432/dbb0rrl7sa5hb4"
 	// log.Println("Starting server on " + host)
 	app := fiber.New()
 
 	app.Static("/public", "../public")
 
 	// // connection string
-	// psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	// log.Println(psqlconn)
 	// open database
-	db, err := sql.Open("postgres", cnxn)
+	// db, err := sql.Open("postgres", cnxn)
+	db, err := sql.Open("postgres", psqlconn)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,11 +107,11 @@ func main() {
 		res, id := auth.Login(db, req.Username, req.Password)
 
 		if res == "true" {
-			token, exp, err := auth.CreateJWTToken(req.Username)
+			token, err := auth.CreateJWTToken(req.Username)
 			if err != nil {
 				return utils.ErrorMsg(c, err.Error())
 			}
-			return c.JSON(fiber.Map{"token": token, "exp": exp, "user": req.Username, "user_id": id})
+			return c.JSON(fiber.Map{"token": token, "user": req.Username, "user_id": id})
 		} else {
 			return utils.ErrorMsg(c, res)
 		}
@@ -666,7 +667,7 @@ func main() {
 		}
 	})
 
-	if port != "" {
+	if serverport != "" {
 		fmt.Println("Server is running on port: " + port)
 		app.Listen(":" + port)
 	} else {
