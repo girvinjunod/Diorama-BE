@@ -63,7 +63,7 @@ func Login(db *sql.DB, username string, password string) (string, int) {
 	if CheckPasswordHash(password, pass_) {
 		return "true", user_id
 	}
-	log.Println(pass_)
-	log.Println(password)
+	// log.Println(pass_)
+	// log.Println(password)
 	return "Invalid login credential", -999
 }
