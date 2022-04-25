@@ -141,3 +141,51 @@ func CheckIfFollowed(db *sql.DB, follower_id string, followed_id string) (string
 	}
 	return "", exist
 }
+
+func GetCountFollower(db *sql.DB, id string) int {
+	query := `SELECT count(*) FROM following where followed_id=$1`
+	rows, err := db.Query(query, id)
+	res := 0
+	if err != nil {
+		log.Println(err)
+		return res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var count int
+		if err := rows.Scan(&count); err != nil {
+			log.Println(err)
+			return res
+		}
+
+		log.Println(count)
+		res = count
+	}
+
+	return res
+}
+
+func GetCountFollowing(db *sql.DB, id string) int {
+	query := `SELECT count(*) FROM following where follower_id=$1`
+	rows, err := db.Query(query, id)
+	res := 0
+	if err != nil {
+		log.Println(err)
+		return res
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var count int
+		if err := rows.Scan(&count); err != nil {
+			log.Println(err)
+			return res
+		}
+
+		log.Println(count)
+		res = count
+	}
+
+	return res
+}

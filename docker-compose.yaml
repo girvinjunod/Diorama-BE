@@ -5,13 +5,15 @@ services:
     depends_on:
       - "postgres"
     ports:
-      - 3000:3000
+      - 8080:8080
     env_file: ./.env
     environment:
       - PQ_HOST=postgres
       - PQ_USER=postgres
       - PQ_PASSWORD=${PQ_PASSWORD}
       - PQ_DBNAME=postgres
+      - PQ_PORT=5432
+      - SECRET_KEY=${SECRET_KEY}
   postgres:
     image: postgres:14.2
     ports:

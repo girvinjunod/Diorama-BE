@@ -343,6 +343,26 @@ func main() {
 		}
 	})
 
+	app.Get("/getCountFollowers/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := models.GetCountFollower(db, userID)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"count": response,
+			"error": false,
+		})
+	})
+
+	app.Get("/getCountFollowing/:id", func(c *fiber.Ctx) error {
+		userID := c.Params("id")
+		response := models.GetCountFollowing(db, userID)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"count": response,
+			"error": false,
+		})
+	})
+
 	// Trips API
 
 	app.Post("/addTrip", func(c *fiber.Ctx) error {
