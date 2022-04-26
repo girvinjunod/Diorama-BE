@@ -678,9 +678,9 @@ func main() {
 
 		if comments != nil {
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"error":        false,
-				"eventID":      eventId,
-				"commentTexts": comments,
+				"error":    false,
+				"eventID":  eventId,
+				"comments": comments,
 			})
 		} else {
 			return utils.ErrorMsg(c, "Comments or event not found")

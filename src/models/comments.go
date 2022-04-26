@@ -68,11 +68,12 @@ type commentResponse2 struct {
 	Error       string `json:"error"`
 	Id          int    `json:"id"`
 	Text        string `json:"text"`
+	UserID      int    `json:"userID"`
 	CommentTime string `json:"commentTime"`
 }
 
 func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResponse2) {
-	query := `SELECT c.id as id, c.text as text, c.comment_time as comment_time FROM events e, comments c where e.id=$1 and e.id=c.event_id`
+	query := `SELECT c.id as id, c.text as text, c.user_id as user_id, c.comment_time as comment_time FROM events e, comments c where e.id=$1 and e.id=c.event_id`
 	rows, err := db.Query(query, eventID)
 	var res []*commentResponse2
 	if err != nil {
@@ -83,8 +84,9 @@ func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResp
 	for rows.Next() {
 		var id int
 		var text string
+		var userID int
 		var comment_time time.Time
-		if err := rows.Scan(&id, &text, &comment_time); err != nil {
+		if err := rows.Scan(&id, &text, &userID, &comment_time); err != nil {
 			log.Println(err)
 			return err.Error(), res
 		}
@@ -93,6 +95,7 @@ func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResp
 			Error:       "false",
 			Id:          id,
 			Text:        text,
+			UserID:      userID,
 			CommentTime: comment_time.Format("2006-01-02 15:04:05"),
 		}
 
