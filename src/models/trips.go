@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"log"
+	"os"
 	"time"
 )
 
@@ -160,7 +161,7 @@ func GetTripsImage(db *sql.DB, id string) []byte {
 		log.Println(err)
 		return response
 	}
-
+	found := false
 	defer rows.Close()
 	for rows.Next() {
 		var picture []byte
@@ -170,6 +171,17 @@ func GetTripsImage(db *sql.DB, id string) []byte {
 		}
 
 		response = picture
+		found = true
 	}
+
+	if !found {
+		log.Println("No picture found")
+		data, err := os.ReadFile("../public/placeholder/event.jpg")
+		if err != nil {
+			log.Fatal(err)
+		}
+		response = data
+	}
+
 	return response
 }
