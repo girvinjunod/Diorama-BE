@@ -69,11 +69,14 @@ type commentResponse2 struct {
 	Id          int    `json:"id"`
 	Text        string `json:"text"`
 	UserID      int    `json:"userID"`
+	Username    string `json:"username"`
 	CommentTime string `json:"commentTime"`
 }
 
 func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResponse2) {
-	query := `SELECT c.id as id, c.text as text, c.user_id as user_id, c.comment_time as comment_time FROM events e, comments c where e.id=$1 and e.id=c.event_id`
+	log.Println("Get all comments from event")
+	query := `SELECT c.id as id, c.text as text, c.user_id as user_id, u.username, c.comment_time as comment_time FROM events e, comments c, users u 
+	where e.id=$1 and e.id=c.event_id and c.user_id=u.id`
 	rows, err := db.Query(query, eventID)
 	var res []*commentResponse2
 	if err != nil {
@@ -85,8 +88,9 @@ func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResp
 		var id int
 		var text string
 		var userID int
+		var username string
 		var comment_time time.Time
-		if err := rows.Scan(&id, &text, &userID, &comment_time); err != nil {
+		if err := rows.Scan(&id, &text, &userID, &username, &comment_time); err != nil {
 			log.Println(err)
 			return err.Error(), res
 		}
@@ -96,6 +100,7 @@ func GetAllCommentsFromEvent(db *sql.DB, eventID string) (string, []*commentResp
 			Id:          id,
 			Text:        text,
 			UserID:      userID,
+			Username:    username,
 			CommentTime: comment_time.Format("2006-01-02 15:04:05"),
 		}
 

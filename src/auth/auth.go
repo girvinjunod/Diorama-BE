@@ -3,6 +3,7 @@ package auth
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,8 +18,13 @@ func Register(db *sql.DB, username string, email string, name string, password s
 		return err.Error()
 	}
 
-	insertDynStmt := `insert into users (username, email, name, password) values($1,$2,$3,$4)`
-	_, err = db.Exec(insertDynStmt, username, email, name, string(hash))
+	data, err := os.ReadFile("../public/placeholder/profile.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	insertDynStmt := `insert into users (username, email, name, password, profile_picture) values($1,$2,$3,$4,$5)`
+	_, err = db.Exec(insertDynStmt, username, email, name, string(hash), data)
 
 	if err != nil {
 		log.Println(err)
