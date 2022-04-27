@@ -184,7 +184,9 @@ func main() {
 	})
 
 	app.Post("/setUserPassword", func(c *fiber.Ctx) error {
-		log.Println(c.Body())
+		log.Println(c)
+		log.Println(c.Request())
+		log.Println(string(c.Body()[:]))
 		type User struct {
 			UserId      int    `json:"userID"`
 			OldPassword string `json:"OldPassword"`
