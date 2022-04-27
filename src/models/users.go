@@ -156,7 +156,7 @@ type searchResponse struct {
 
 func SearchUser(db *sql.DB, query string) []*searchResponse {
 	log.Println("Search user")
-	sqlquery := `SELECT id, username FROM users where username LIKE $1`
+	sqlquery := `SELECT id, username FROM users where username ILIKE $1`
 	rows, err := db.Query(sqlquery, query+"%")
 	var response []*searchResponse
 	if err != nil {
