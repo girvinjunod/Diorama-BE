@@ -159,7 +159,7 @@ func GetCountFollower(db *sql.DB, id string) int {
 			return res
 		}
 
-		log.Println(count)
+		// log.Println(count)
 		res = count
 	}
 
@@ -183,7 +183,7 @@ func GetCountFollowing(db *sql.DB, id string) int {
 			return res
 		}
 
-		log.Println(count)
+		// log.Println(count)
 		res = count
 	}
 

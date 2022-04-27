@@ -65,6 +65,7 @@ func SetUserDetail(db *sql.DB, userID string, username string, name string, emai
 }
 
 func SetUserPassword(db *sql.DB, userID int, oldPassword string, newPassword string) string {
+	log.Println("Set User Password")
 	query := `SELECT password FROM users where id=$1`
 	var currPassword string
 	err := db.QueryRow(query, userID).Scan(&currPassword)
@@ -102,6 +103,7 @@ func SetUserPassword(db *sql.DB, userID int, oldPassword string, newPassword str
 }
 
 func GetPPByID(db *sql.DB, id string) []byte {
+	log.Println("Get PP by ID")
 	query := `SELECT profile_picture FROM users where id=$1`
 	var response []byte
 	rows, err := db.Query(query, id)
