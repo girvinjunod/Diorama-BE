@@ -18,13 +18,13 @@ jobs:
           go-version: 1.18
 
       - name: Install dependencies
-        run: cd src && go mod download
+        run: cd src && go mod download && go get -d golang.org/x/lint/golint
 
       - name: Build
         run: cd src && go build -v -o ../bin/diorama
 
-      - name: Run vet & lint
-        run: |
-          cd src
-          go vet .
-          golint .
+      - name: Run vet
+        run: cd src && go vet .
+
+      - name: Run linter
+        run: cd src && golint .
