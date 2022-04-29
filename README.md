@@ -1,4 +1,4 @@
-# Backend diorama.id
+# API Diorama
 ## Requirements
 - Go 1.17
 - Postgresql 14
