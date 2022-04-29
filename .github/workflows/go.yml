@@ -1,0 +1,30 @@
+name: Go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Install dependencies
+        run: cd src && go mod download && go get -d golang.org/x/lint/golint && go install golang.org/x/lint/golint
+
+      - name: Build
+        run: cd src && go build -v -o ../bin/diorama
+
+      - name: Run vet
+        run: cd src && go vet .
+
+      - name: Run linter
+        run: cd src && golint .
